@@ -115,3 +115,146 @@ void myQueueFree(MyQueue* obj)
 {
     free(obj);
 }
+
+// 225. Implement Stack using Queues
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+// Linked list
+typedef struct Node 
+{
+    int data;
+    struct Node* next;
+} Node;
+
+// Queue
+typedef struct 
+{
+    Node* front;
+    Node* rear;
+} Queue;
+
+// As done before function to create new node
+Node* newNode(int data) 
+{
+    Node* node = (Node*)malloc(sizeof(Node));
+    node->data = data;
+    node->next = NULL;
+    return node;
+}
+
+// Initialize queue with both front and rear being set to null because nothing is in it yet
+void initQueue(Queue* queue) 
+{
+    queue->front = NULL;
+    queue->rear = NULL;
+}
+
+// Check if queue is empty
+bool isQueueEmpty(Queue* queue) 
+{
+    return queue->front == NULL;
+}
+
+// Enqueue an element (push to rear)
+void enqueue(Queue* queue, int data) 
+{
+    Node* node = newNode(data);
+    if (queue->rear == NULL) 
+    {
+        queue->front = queue->rear = node;
+        return;
+    }
+    queue->rear->next = node; //Add the new node @ the rear FIFO
+    queue->rear = node;
+}
+
+// Dequeue an element (pop from front)
+int dequeue(Queue* queue) 
+{
+    if (isQueueEmpty(queue))
+    {    
+        return -1; // Make sure we don't underflow
+    }
+    Node* temp = queue->front; //Temp to store front node
+    int data = temp->data; //Transfer data to front
+    queue->front = queue->front->next; //Moving on to next node
+    if (queue->front == NULL) queue->rear = NULL;
+    free(temp);
+    return data; // Returns the dequeued value
+}
+
+// Set up Stack with two queues
+typedef struct 
+{
+    Queue queue1; // Main queue
+    Queue queue2; // Temp queue for operations
+} MyStack;
+
+//Initializing stack
+MyStack* myStackCreate() 
+{
+    MyStack* stack = (MyStack*)malloc(sizeof(MyStack));
+    initQueue(&stack->queue1); //Intializing queues into stack 
+    initQueue(&stack->queue2); 
+    return stack;
+}
+
+// Push element onto stack
+void myStackPush(MyStack* obj, int x) 
+{
+    enqueue(&obj->queue1, x); //Enqueues into queue1
+}
+
+// Remove element from top of stack
+int myStackPop(MyStack* obj) {
+    if (isQueueEmpty(&obj->queue1)) 
+    {    
+        return -1; //stops underflow
+    }
+    while (obj->queue1.front->next != NULL)  //Move elements from Stack1 to Stack2 for Operations
+    {
+        enqueue(&obj->queue2, dequeue(&obj->queue1));
+    }
+    int topElement = dequeue(&obj->queue1);
+    
+    while (!isQueueEmpty(&obj->queue2))  // After removing element move everything back to Stack1
+    {
+        enqueue(&obj->queue1, dequeue(&obj->queue2));
+    }
+    return topElement;
+}
+
+// Get the top element
+int myStackTop(MyStack* obj) 
+{
+    if (isQueueEmpty(&obj->queue1)) 
+    {
+        return -1;
+    }
+    while (obj->queue1.front->next != NULL)
+    {
+        enqueue(&obj->queue2, dequeue(&obj->queue1));
+    }
+    int topElement = obj->queue1.front->data;
+    enqueue(&obj->queue2, dequeue(&obj->queue1));
+    
+    while (!isQueueEmpty(&obj->queue2)) 
+    {
+        enqueue(&obj->queue1, dequeue(&obj->queue2));
+    }
+    return topElement;
+}
+
+// Check if stack is empty
+bool myStackEmpty(MyStack* obj) 
+{
+    return isQueueEmpty(&obj->queue1);
+}
+
+// Memory
+void myStackFree(MyStack* obj) 
+{    
+    free(obj);
+}
